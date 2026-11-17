@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>国资ICT项目管理看板</title>
+<style>
+  :root{
+    --bg:#f3f5f9; --card:#ffffff; --ink:#1f2937; --muted:#6b7280;
+    --line:#e5e7eb; --accent:#155eef;
+    --green:#16a34a; --green-soft:#e7f6ec;
+    --blue:#0e7490; --blue-soft:#e0f2f6;
+    --red:#dc2626; --red-soft:#fdecec;
+    --slate:#475569; --radius:14px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif; background:var(--bg); color:#1f2937; padding-bottom:env(safe-area-inset-bottom);}
+  .header{position:sticky; top:0; z-index:50; background:linear-gradient(135deg,#0e7490 0%,#155e75 45%,#0f3d4e 100%); color:#fff; padding:16px 16px 18px; padding-top:calc(16px + env(safe-area-inset-top)); border-radius:0 0 22px 22px; box-shadow:0 6px 18px rgba(15,61,78,.28);}
+  .header .top{display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;}
+  .header h1{font-size:20px; margin:0; font-weight:700; letter-spacing:.5px;}
+  .header .sub{font-size:12px; opacity:.85; margin-top:3px;}
+  .header .src{font-size:11px; opacity:.8; text-align:right; line-height:1.4;}
+  .statchips{display:flex; gap:8px; margin-top:14px;}
+  .stat{background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.18); border-radius:12px; padding:8px 10px; flex:1; text-align:center;}
+  .stat .num{font-size:18px; font-weight:700; line-height:1.1;}
+  .stat .lab{font-size:11px; opacity:.85; margin-top:2px;}
+
+  .toolbar{position:sticky; top:0; z-index:40; background:var(--bg); padding:12px 16px 4px;}
+  .searchbar{display:flex; align-items:center; gap:8px; background:#fff; border:1px solid var(--line); border-radius:12px; padding:9px 12px; box-shadow:0 1px 3px rgba(0,0,0,.04);}
+  .searchbar input{border:none; outline:none; flex:1; font-size:14px; background:transparent;}
+  .searchbar .icon{color:var(--muted); font-size:16px;}
+  .filters{display:flex; gap:8px; overflow-x:auto; padding:10px 0 8px; -webkit-overflow-scrolling:touch;}
+  .filters::-webkit-scrollbar{display:none;}
+  .fchip{flex:none; background:#fff; border:1px solid var(--line); color:var(--muted); border-radius:999px; padding:6px 12px; font-size:12px; cursor:pointer; white-space:nowrap;}
+  .fchip.on{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .fchip .cnt{opacity:.7; margin-left:3px; font-size:11px;}
+
+  .wrap{padding:10px 16px 24px;}
+  .group{margin-bottom:18px;}
+  .ghead{display:flex; align-items:center; gap:8px; margin-bottom:8px;}
+  .ghead .dot{width:10px;height:10px;border-radius:50%; flex:none;}
+  .ghead .gname{font-size:15px; font-weight:700;}
+  .ghead .gmeta{font-size:11px; color:var(--muted); margin-left:auto;}
+  .card{background:#fff; border:1px solid var(--line); border-radius:var(--radius); padding:12px 14px; margin-bottom:8px; box-shadow:0 1px 3px rgba(0,0,0,.05);}
+  .card .pname{font-size:14px; font-weight:600; line-height:1.45;}
+  .card .pname .amt{color:var(--accent); font-weight:700; margin-left:4px;}
+  .tags{display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;}
+  .tag{font-size:11px; padding:2px 8px; border-radius:999px;}
+  .tag.signed{background:var(--green-soft); color:var(--green);}
+  .tag.opp{background:var(--blue-soft); color:var(--blue);}
+  .tag.void{background:#f1f5f9; color:#94a3b8; text-decoration:line-through;}
+  .tag.key{background:#fff7ed; color:#ea580c; border:1px solid #fed7aa;}
+  .meta{display:flex; flex-wrap:wrap; gap:6px 12px; margin-top:8px; font-size:12px; color:var(--muted);}
+  .meta .k{color:#9aa1ab;}
+  .meta b{color:var(--ink); font-weight:600;}
+  .notebox{margin-top:8px; padding-top:8px; border-top:1px dashed var(--line); font-size:12px; color:#475569; line-height:1.65;}
+  .empty{padding:40px 16px; text-align:center; color:var(--muted); font-size:13px;}
+  footer{text-align:center; color:#9aa1ab; font-size:11px; padding:6px 16px 20px;}
+  .footer-tip{margin-top:8px; background:#fff; border:1px dashed var(--line); border-radius:10px; padding:10px 12px; font-size:11px; color:var(--muted); line-height:1.7; text-align:left;}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="top">
+    <div>
+      <h1>国资 ICT 项目管理</h1>
+      <div class="sub" id="today"></div>
+    </div>
+    <div class="src">数据源：腾讯文档《国资项目》<br>阶段列：签约 / 商机 / 作废</div>
+  </div>
+  <div class="statchips">
+    <div class="stat"><div class="num" id="stClient">–</div><div class="lab">客户单位</div></div>
+    <div class="stat"><div class="num" id="stProj">–</div><div class="lab">项目</div></div>
+    <div class="stat"><div class="num" id="stAmt">–</div><div class="lab">金额合计</div></div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="searchbar">
+    <span class="icon">⌕</span>
+    <input id="q" type="search" placeholder="搜索客户 / 项目 / 内容">
+  </div>
+  <div class="filters" id="filters"></div>
+</div>
+
+<div class="wrap" id="list"></div>
+
+<footer>
+  阶段按腾讯文档「阶段」列分类（签约 / 商机 / 作废），橙色「近期重点」为原文标注
+  <div class="footer-tip">💡 数据来自腾讯文档《国资项目》。腾讯文档更新后，可用同步脚本重抓数据生成新版看板。</div>
+</footer>
+
+<script>
+const DATA = [
+  {group:"广电", c:"#0f766e", projects:[
+    {t:"数广科技·数字苏州", amt:"30万", st:"void", note:"数广科技签的数字苏州，再给电信，短信收入"},
+    {t:"云闲置", amt:"6万", st:"void"},
+    {t:"数广科技·7坐席本地化部署", st:"void", time:"26", note:"华衍水务"},
+    {t:"广电移动传媒", amt:"10万", st:"signed", note:"卓华艺，邀标10万，广告7万，云3万"},
+    {t:"采购GPU升级", st:"void", note:"采购升级GPU一台，客户报价，社会公司低价中标"}
+  ]},
+  {group:"文旅", c:"#0e7490", projects:[
+    {t:"2025年硬件维保", amt:"15万", st:"void"},
+    {t:"二期项目", amt:"80万", st:"signed", note:"204万，今年付40%+50%", income:"3月承兑付40%，剩余今年验收付，7月目标收98万但验收不了"},
+    {t:"智慧文旅平台运维", amt:"13万", st:"void", note:"2025-2026年苏州智慧文旅平台软件运维-鸿信"},
+    {t:"文旅项目", amt:"250万", st:"signed"}
+  ]},
+  {group:"214兵工所", c:"#0e7490", projects:[
+    {t:"门口闸机视频改造", amt:"18万", st:"signed", time:"26", note:"TP结算53076 澜普72745；电信15个点后，约3.5万利润"},
+    {t:"二期新装需求", amt:"", st:"opp", key:true, note:"二期新装需求"}
+  ]},
+  {group:"创元·量子三网", c:"#7c3aed", projects:[
+    {t:"量子三网（创元）", st:"opp", key:true, note:"后向再去沟通预算多少，只有无线没有有线；赵灵珠-中亿丰沟通"}
+  ]},
+  {group:"慈善", c:"#16a34a", projects:[
+    {t:"新办公楼展厅声光电", amt:"40万", st:"opp", key:true}
+  ]},
+  {group:"风景园林", c:"#0891b2", projects:[
+    {t:"2个消控室", amt:"5万", st:"signed", time:"26", income:"5月，今年剩余5万付款后销账"},
+    {t:"新增4个消控室", amt:"4万硬件+2.8万服务+4千", st:"opp", key:true, note:"消控室待物业合同到期后再实施，预计27年"},
+    {t:"景区项目", st:"void", note:"携程竞争，最终园林局后向"},
+    {t:"越城遗址·渔家水乡", amt:"20万", st:"signed", time:"26", income:"7月入收40万，预计分姑苏一半，还没拆分", note:"信号覆盖及通信接入系统集成服务，姑苏分一半，甲方催开票，徐敏审批改甲方名称变更，后向审计结束，等前向到款后通知后向开票"},
+    {t:"万邦·监控维保", amt:"20万", st:"opp", note:"每年监控维保、十几万光缆布放"}
+  ]},
+  {group:"福利院", c:"#d97706", projects:[
+    {t:"福利总院WiFi", amt:"49万", st:"signed", time:"26", note:"50万，移动来竞争了"},
+    {t:"福利总院剩余WiFi", amt:"100万", st:"opp", key:true, time:"27"},
+    {t:"福利总院智能化平台", amt:"200万", st:"opp", key:true, time:"27", note:"福利院自己的钱，25年申报共407万，主要370万给数字苏州，再发2个包（南京索酷270万his + 蓝深90万硬件）"},
+    {t:"福利院自有资金", amt:"", st:"void", time:"26", note:"25年申报，一共407万"}
+  ]},
+  {group:"国发", c:"#155e75", projects:[
+    {t:"深信服·数据安全", amt:"21万", st:"signed", time:"26", income:"2026年3月落收"},
+    {t:"数据备份", amt:"70万", st:"signed", key:true, note:"鼎甲、爱数（风投有问题）、科力锐vs山石"},
+    {t:"微步在线", amt:"75万", st:"signed", time:"26", income:"26年5月落收20万，7月再落收40万"},
+    {t:"私有云尾款", amt:"30万", st:"signed", time:"26", income:"2026/1 欠费云甄选14万", note:"2026-1 云甄选 zstack 裴磊 14万"},
+    {t:"H100续·云计费", amt:"44万", st:"signed", time:"26", note:"今年一半"},
+    {t:"H100·云计费", amt:"22万", st:"signed", time:"26", income:"2026-3 落收42万？9月划走一半姑苏"},
+    {t:"灾备", amt:"500万", st:"opp", key:true, time:"26", note:"拆2个包，暂不考虑"},
+    {t:"私有化+算力", amt:"20万", st:"opp", key:true, note:"国发buddy私有化+token电信+计费管理平台，上海理想，新装2台4090算力"}
+  ]},
+  {group:"国投", c:"#4d7c0f", projects:[
+    {t:"泛微OA升级·4个小微", amt:"28万", st:"signed", time:"26", income:"4月-5月"},
+    {t:"苏悦广场5层办公楼弱电+机房", st:"opp", key:true}
+  ]},
+  {group:"极氪4S·节能", c:"#334155", projects:[
+    {t:"小微", amt:"10万", st:"void", time:"26"}
+  ]},
+  {group:"康养", c:"#be123c", projects:[
+    {t:"居家平台", amt:"57万", st:"signed", time:"26", note:"居家利润1.5万"},
+    {t:"ECM鸿翼", amt:"12万", st:"void", time:"26"},
+    {t:"商城平台", amt:"16.88万", st:"signed", time:"26"},
+    {t:"一键呼", amt:"100万", st:"signed", time:"26", income:"26年1月戴玉强还100万", note:"一键呼安装利润3.5万-王雪明"},
+    {t:"床头屏", amt:"38.8万", st:"signed", time:"26", income:"预留4万利润，7月已落收32万", note:"床头屏利润4.9万，预留项目补充-国良水华代付1.2万+张剑8800；但吴峻三级公司要取缔，通过2级支付，预计年底，还没付给后向"},
+    {t:"太仓/横扇护理院HIS", amt:"45万", st:"void"}
+  ]},
+  {group:"民政", c:"#0369a1", projects:[
+    {t:"苏州『数智民政』一体化平台", amt:"445万", st:"opp", time:"27"},
+    {t:"江苏智慧殡葬管理平台", amt:"214万", st:"opp", time:"27"},
+    {t:"苏城数字殡葬『殡葬综合监管一件事』", amt:"166万", st:"opp", time:"27"}
+  ]},
+  {group:"名保", c:"#a21caf", projects:[
+    {t:"东方水城·云+安全", amt:"3万", st:"signed", time:"26", note:"云服务器、安全服务，加载游船系统"},
+    {t:"应急局一栋楼考场改造", st:"opp", key:true, note:"吴东华，段明，万和出钱，设计、土建和智能化；核心教学设备应急局直接采，配套弱电待定"}
+  ]},
+  {group:"名城", c:"#0e7490", projects:[
+    {t:"小乔巷改造", amt:"40万", st:"signed", time:"26", note:"胡浩、陈栋喜介绍，后续科达，《苏州姑苏城市更新有限公司拆迁地块监控服务合同》"},
+    {t:"机房运维", st:"opp", key:true, time:"26", note:"120万×3年，天创转签240万3年，另加20万利润分3年"},
+    {t:"桌面运维", st:"void", time:"26", note:"43万×3年，新宝联承接"},
+    {t:"公寓", st:"void", time:"26", note:"180万，自己做"},
+    {t:"五条路治安监控", amt:"230万", st:"signed", key:true, time:"26", note:"直签永和、环森，对方还个100多万项目给我"},
+    {t:"五条路交安监控、标志标线", amt:"140万", st:"signed", key:true, note:"190万扣除3万税赋仅143万"},
+    {t:"西中市交安治安", amt:"60万", st:"void", time:"26", note:"中亿丰建设"},
+    {t:"虎丘湿地·火情监测", amt:"13万", st:"signed", key:true, time:"26", note:"澜普，盯着7月付款"},
+    {t:"东方水城·新市桥码头机器人", st:"opp", key:true, note:"50万？"},
+    {t:"阊门LED全息屏项目", amt:"186万", st:"signed", key:true, time:"26"},
+    {t:"OA系统改造", st:"opp", key:true, time:"27", note:"国泰新点改成泛微"},
+    {t:"桃园酒店·狮山国际中心", st:"opp", time:"26", note:"1万平，5星级酒店（待定）弱电智能化"}
+  ]},
+  {group:"平江三网", c:"#0f766e", projects:[
+    {t:"华工-老丁·三网小微", amt:"10万", st:"signed", time:"26", income:"5月一半6月一半"}
+  ]},
+  {group:"日报", c:"#7c3aed", projects:[
+    {t:"数据中心云", amt:"110万", st:"signed", time:"26", income:"9月1日中标云", note:"阿里切过来，增加30万"},
+    {t:"物业空调改造", amt:"50万", st:"void", time:"26", note:"电表和平台换新"},
+    {t:"云痕AI阅卷·园外", st:"opp", time:"26"},
+    {t:"大厦弱电运维", amt:"22万", st:"void", time:"26", note:"移动22万-19.8万，二次报价没来得及"},
+    {t:"园林云灾备", st:"opp", key:true, time:"26", note:"新增云资源和山石软件，争取做成电信签约总包"}
+  ]},
+  {group:"书香", c:"#0f766e", projects:[
+    {t:"物业系统", amt:"170万", st:"void", time:"26"},
+    {t:"财务系统", amt:"380万", st:"void", time:"26", note:"金蝶原厂中标"}
+  ]},
+  {group:"书展", c:"#b45309", projects:[
+    {t:"徐陆恺·江苏凤凰传媒", amt:"3万", st:"signed", time:"26"}
+  ]},
+  {group:"文投", c:"#c026d3", projects:[
+    {t:"集团机房扩容", amt:"150万", st:"opp", time:"26"},
+    {t:"集团机房运维", amt:"66万", st:"opp", key:true, time:"26", note:"300万，白雪冬杭州，风云科技中标后转包"},
+    {t:"集团档案系统", amt:"10万", st:"void", time:"26", note:"鸿翼中标"},
+    {t:"体育中心项目", amt:"150万", st:"void", note:"园区拆分签约指标"},
+    {t:"体育中心苏超保障", amt:"2万", st:"signed", note:"2万，4场线路"},
+    {t:"文化数字化·4090租用", amt:"9万", st:"signed", time:"26"},
+    {t:"文化数字化·采购超聚变4090", amt:"14万", st:"signed", time:"26"},
+    {t:"科技馆2个项目", amt:"20万", st:"void", note:"刘勇，备份+等保"},
+    {t:"体育中心大屏维保", amt:"50万", st:"opp", key:true, note:"硬件朗捷通，软件苏高新"}
+  ]},
+  {group:"新宝联", c:"#334155", projects:[
+    {t:"IDC合同", amt:"51万/年", st:"signed", income:"估计8月才能出账", note:"保底年化51万，每月出账4万+，根据实际流量计算"}
+  ]},
+  {group:"园林", c:"#0891b2", projects:[
+    {t:"工行发包·园林集团金蝶系统", st:"opp", key:true}
+  ]}
+];
+
+const STATUS = {
+  signed:{label:"签约", cls:"signed"},
+  opp:   {label:"商机", cls:"opp"},
+  void:  {label:"作废", cls:"void"}
+};
+
+function fmtDate(){const d=new Date();return d.getFullYear()+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日";}
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));}
+
+function render(data){
+  const el=document.getElementById("list");
+  if(!data.length){el.innerHTML='<div class="empty">未找到匹配的项目</div>';return;}
+  let html="", cCli=0, cProj=0, sum=0;
+  data.forEach(g=>{
+    if(!g.projects.length)return;
+    cCli++; cProj+=g.projects.length;
+    g.projects.forEach(p=>{const m=String(p.amt||"").match(/[\d.]+/); if(m)sum+=parseFloat(m[0]);});
+    html+='<div class="group"><div class="ghead"><span class="dot" style="background:'+g.c+'"></span><span class="gname">'+esc(g.group)+'</span><span class="gmeta">'+g.projects.length+' 项</span></div>';
+    g.projects.forEach(p=>{
+      html+='<div class="card"><div class="pname">'+esc(p.t||"")+'<span class="amt">'+esc(p.amt||"")+'</span></div>';
+      html+='<div class="tags">';
+      if(p.st&&STATUS[p.st])html+='<span class="tag '+STATUS[p.st].cls+'">'+STATUS[p.st].label+'</span>';
+      if(p.key)html+='<span class="tag key">近期重点</span>';
+      html+='</div>';
+      html+='<div class="meta">';
+      if(p.time)html+='<span><span class="k">时间</span> <b>'+esc(p.time)+'</b></span>';
+      if(p.income)html+='<span><span class="k">入收/回款</span> <b>'+esc(p.income)+'</b></span>';
+      html+='</div>';
+      if(p.note)html+='<div class="notebox">'+esc(p.note)+'</div>';
+      html+='</div>';
+    });
+    html+='</div>';
+  });
+  if(!cCli){el.innerHTML='<div class="empty">未找到匹配的项目</div>';return;}
+  el.innerHTML=html;
+  document.getElementById("stClient").textContent=cCli;
+  document.getElementById("stProj").textContent=cProj;
+  document.getElementById("stAmt").textContent=Math.round(sum)+"万";
+}
+
+let cur="all", kw="", M=DATA;
+
+function buildFilters(){
+  const f=document.getElementById("filters");
+  const all=[{k:"all",label:"全部"}];
+  Object.keys(STATUS).forEach(k=>{ if(M.some(g=>g.projects.some(p=>p.st===k)))all.push({k,label:STATUS[k].label}); });
+  all.forEach(o=>{
+    const n=o.k==="all"?M.reduce((s,g)=>s+g.projects.length,0):M.reduce((s,g)=>s+g.projects.filter(p=>p.st===o.k).length,0);
+    const el=document.createElement("div");
+    el.className="fchip"+(cur===o.k?" on":"");
+    el.innerHTML=o.label+' <span class="cnt">'+n+'</span>';
+    el.onclick=()=>{ cur=o.k; document.querySelectorAll(".fchip").forEach(x=>x.classList.remove("on")); el.classList.add("on"); doRender(); };
+    f.appendChild(el);
+  });
+}
+
+function doRender(){
+  const q=kw.trim();
+  let d=M;
+  if(q){const Q=q.toLowerCase(); d=d.map(g=>{const hitG=(g.group||"").toLowerCase().includes(Q); return {...g,projects:g.projects.filter(p=>hitG||((p.t||"")+(p.amt||"")+(p.note||"")+(p.time||"")+(p.income||"")).toLowerCase().includes(Q))};}).filter(g=>g.projects.length);}
+  if(cur!=="all"){d=d.map(g=>({...g,projects:g.projects.filter(p=>p.st===cur)})).filter(g=>g.projects.length);}
+  render(d);
+}
+
+document.getElementById("q").addEventListener("input",e=>{kw=e.target.value; doRender();});
+document.getElementById("today").textContent="更新日期 "+fmtDate();
+buildFilters();
+doRender();
+</script>
+</body>
+</html>
